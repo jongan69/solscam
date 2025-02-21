@@ -1,7 +1,7 @@
-import { connectToDatabase } from "@/lib/connectDb";
+import { connectToDatabase } from "@/lib/db/connectDb";
 import Wallet from "@/lib/schemas/Wallet";
 
-export default async function POST(req: Request) {
+export async function POST(req: Request) {
   const body = await req.json();
   await connectToDatabase();
   
@@ -15,6 +15,7 @@ export default async function POST(req: Request) {
     }
     return Response.json(wallet);
   } catch (error) {
+    console.error("Error submitting wallet:", error);
     return Response.json({ error: "Database error" });
   }
 }

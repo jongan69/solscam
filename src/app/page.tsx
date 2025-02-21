@@ -1,7 +1,7 @@
 import { columns } from "@/components/WalletTable/columns";
 import DataTable from "@/components/WalletTable/data-table";
 import { fetchWallets } from "@/lib/fetchWallets";
-import { LiveTrades } from "@/components/LiveTrades/LiveTrades";
+// import { LiveTrades } from "@/components/LiveTrades/LiveTrades";
 import { Suspense } from "react";
 
 export default async function Home() {

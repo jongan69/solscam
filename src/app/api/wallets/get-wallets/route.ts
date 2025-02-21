@@ -3,22 +3,10 @@ import { NextResponse } from "next/server";
 // replace with mongodb call
 // import { tradersData } from "../../../../../traders";
 import { mockStatsData, mockTradesData, mockTokenHoldingsData } from "../../../../../mockData";
-import { connectToDatabase } from "../../../../lib/connectDb";
-import Wallet from "@/lib/schemas/Wallet";
-
+import { getWallets } from "@/lib/db/fetchWalletsDb";
 // Add cache configuration
 export const revalidate = 300; // Cache for 5 minutes
 
-const getWallets = async () => {
-    await connectToDatabase();
-    try {
-        const wallets = await Wallet.find({}).lean();
-        return wallets;
-    } catch (error) {
-        console.error('Error fetching wallets:', error);
-        return [];
-    }
-}
 
 // Function to fetch twitter followers
 const getTwitterFollowers = async (username: string) => {

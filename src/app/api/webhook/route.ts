@@ -4,8 +4,10 @@ import { pusher } from '@/lib/pusher'
 import { getTokenEnrichedData } from '@/lib/getTokenEnrichedData'
 
 // replace with mongodb call
-import { tradersData } from "../../../../traders"
+// import { tradersData } from "../../../../traders"
 import { Trade } from '@/types/trade'
+import { getWallets } from '@/lib/db/fetchWalletsDb'
+
 
 
 interface TokenTransfer {
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
     const { amount, senderAddress, receiverAddress } = extractTransferDetails(transaction)
 
     // Find matching trader
-    const matchingTrader = findMatchingTrader(senderAddress, receiverAddress)
+    const matchingTrader = await findMatchingTrader(senderAddress, receiverAddress)
 
     // Create base trade object
     const trade: Trade = {
@@ -116,8 +118,9 @@ function extractTransferDetails(transaction: Transaction) {
   return { amount, senderAddress, receiverAddress }
 }
 
-function findMatchingTrader(senderAddress?: string, receiverAddress?: string) {
-  return tradersData.find(trader => {
+async function findMatchingTrader(senderAddress?: string, receiverAddress?: string) {
+  const wallets = await getWallets()
+  return wallets.find(trader => {
     const traderWallet = trader.wallet.toLowerCase()
     return (
       senderAddress?.toLowerCase() === traderWallet ||

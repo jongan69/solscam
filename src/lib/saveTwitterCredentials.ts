@@ -1,4 +1,5 @@
-import { connectToDatabase } from './connectDb';
+import { connectToDatabase } from './db/connectDb';
+import Wallet from './schemas/Wallet';
 
 interface TwitterCredentials {
   accessToken: string;
@@ -9,12 +10,12 @@ interface TwitterCredentials {
 
 export async function saveTwitterCredentials(walletAddress: string, credentials: TwitterCredentials) {
   try {
-    const client = await connectToDatabase();
-    const database = client.db('potionUsers'); 
-    const wallets = database.collection('twitterAuth');
+    await connectToDatabase();
+    // const database = client.db('potionUsers'); 
+    // const wallets = database.collection('twitterAuth');
 
     // Update the wallet document with Twitter credentials
-    await wallets.updateOne(
+    await Wallet.updateOne(
       { address: walletAddress },
       {
         $set: {
@@ -38,11 +39,11 @@ export async function saveTwitterCredentials(walletAddress: string, credentials:
 
 export async function getTwitterCredentials(walletAddress: string) {
   try {
-    const client = await connectToDatabase();
-    const database = client.db('walletAnalyzer');
-    const wallets = database.collection('wallets');
+    await connectToDatabase();
+    // const database = client.db('walletAnalyzer');
+    // const wallets = database.collection('wallets');
 
-    const wallet = await wallets.findOne({ address: walletAddress });
+    const wallet = await Wallet.findOne({ address: walletAddress });
     return wallet?.twitter || null;
 
   } catch (error) {

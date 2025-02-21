@@ -1,7 +1,7 @@
-import { connectToDatabase } from "@/lib/connectDb";
+import { connectToDatabase } from "@/lib/db/connectDb";
 import Wallet from "@/lib/schemas/Wallet";
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 
 export async function POST(req: Request) {
   try {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Row } from "@tanstack/react-table";
 import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
@@ -12,6 +12,75 @@ import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 
 import { Wallet } from "@/types/wallet";
 import { usersStatus } from "./definitions";
+
+const VotesCell = ({ row }: { row: Row<Wallet> }) => {
+  const [isVoting, setIsVoting] = useState(false);
+  const wallet = row.original;
+  
+  const handleVote = async (voteType: "scammer" | "notScammer") => {
+    if (isVoting) return;
+    
+    setIsVoting(true);
+    try {
+      const response = await fetch("/api/vote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          address: wallet.address,
+          vote: voteType,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Vote failed");
+      }
+      
+      // Update the local state optimistically
+      const newVotes = {
+        scammer: (wallet.votes?.scammer || 0) + (voteType === "scammer" ? 1 : 0),
+        notScammer: (wallet.votes?.notScammer || 0) + (voteType === "notScammer" ? 1 : 0)
+      };
+      row.original.votes = newVotes;
+      
+      toast.success(`Successfully voted ${voteType === "scammer" ? "down" : "up"}`);
+      
+    } catch (error) {
+      console.error("Error voting:", error);
+      toast.error("Failed to record vote");
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleVote("notScammer")}
+        disabled={isVoting}
+        className="text-green-500 hover:text-green-700"
+      >
+        <ThumbsUp className="h-4 w-4" />
+        <span className="ml-1">{wallet.votes?.notScammer || 0}</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleVote("scammer")}
+        disabled={isVoting}
+        className="text-red-500 hover:text-red-700"
+      >
+        <ThumbsDown className="h-4 w-4" />
+        <span className="ml-1">{wallet.votes?.scammer || 0}</span>
+      </Button>
+    </div>
+  );
+};
 
 export const columns: ColumnDef<Wallet>[] = [
   {
@@ -183,74 +252,7 @@ export const columns: ColumnDef<Wallet>[] = [
   {
     id: "votes",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Votes" />,
-    cell: ({ row }) => {
-      const [isVoting, setIsVoting] = useState(false);
-      const wallet = row.original;
-      
-      const handleVote = async (voteType: "scammer" | "notScammer") => {
-        if (isVoting) return;
-        
-        setIsVoting(true);
-        try {
-          const response = await fetch("/api/vote", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              address: wallet.address,
-              vote: voteType,
-            }),
-          });
-          
-          const data = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(data.error || "Vote failed");
-          }
-          
-          // Update the local state optimistically
-          const newVotes = {
-            scammer: (wallet.votes?.scammer || 0) + (voteType === "scammer" ? 1 : 0),
-            notScammer: (wallet.votes?.notScammer || 0) + (voteType === "notScammer" ? 1 : 0)
-          };
-          row.original.votes = newVotes;
-          
-          toast.success(`Successfully voted ${voteType === "scammer" ? "down" : "up"}`);
-          
-        } catch (error) {
-          console.error("Error voting:", error);
-          toast.error("Failed to record vote");
-        } finally {
-          setIsVoting(false);
-        }
-      };
-
-      return (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleVote("notScammer")}
-            disabled={isVoting}
-            className="text-green-500 hover:text-green-700"
-          >
-            <ThumbsUp className="h-4 w-4" />
-            <span className="ml-1">{wallet.votes?.notScammer || 0}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleVote("scammer")}
-            disabled={isVoting}
-            className="text-red-500 hover:text-red-700"
-          >
-            <ThumbsDown className="h-4 w-4" />
-            <span className="ml-1">{wallet.votes?.scammer || 0}</span>
-          </Button>
-        </div>
-      );
-    },
+    cell: ({ row }) => <VotesCell row={row} />,
   },
   {
     id: "actions",
