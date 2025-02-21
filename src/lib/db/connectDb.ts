@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-
 import * as dotenv from 'dotenv';
 import path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 const MONGODB_URI = process.env.MONGODB_URI!;
 
 if (!MONGODB_URI) {
@@ -25,15 +24,37 @@ if (!global.mongoose) {
 }
 
 export async function connectToDatabase() {
-  try {
-    if (mongoose.connection.readyState >= 1) {
-      return;
-    }
+  console.log('Attempting database connection...');
+  
+  if (cached.conn) {
+    console.log('Using existing database connection');
+    return cached.conn;
+  }
 
-    await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
-  } catch (error) {
-    console.error('Error connecting to MongoDB:', error);
-    throw error;
+  if (!cached.promise) {
+    console.log('Creating new database connection...');
+    const opts = {
+      dbName: 'solscam',
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
+      console.log('Successfully connected to database');
+      cached.conn = mongooseInstance.connection;
+      return cached.conn;
+    });
+  }
+
+  try {
+    console.log('Waiting for database connection promise to resolve...');
+    cached.conn = await cached.promise;
+    console.log('Database connection established successfully');
+    return cached.conn;
+  } catch (e) {
+    console.error('Database connection error:', e);
+    cached.promise = null;
+    throw e;
   }
 }

@@ -1,43 +1,11 @@
 import { NextResponse } from "next/server";
-
-// replace with mongodb call
-// import { tradersData } from "../../../../../traders";
 import { mockStatsData, mockTradesData, mockTokenHoldingsData } from "../../../../../mockData";
 import { getWallets } from "@/lib/db/fetchWalletsDb";
+import { fetchFollowers } from "@/lib/soltrendio/fetchFollowers";
+import { getPnl } from "@/lib/fetchPnl";
+
 // Add cache configuration
 export const revalidate = 300; // Cache for 5 minutes
-
-
-// Function to fetch twitter followers
-const getTwitterFollowers = async (username: string) => {
-    try {
-        const response = await fetch('https://soltrendio.com/api/premium/twitter-followers', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username })
-        })
-        if (!response.ok) return 0;
-        const data = await response.json()
-        return data || 0 // Add fallback to 0 if no followers returned
-    } catch (error) {
-        console.error('Error fetching followers:', error);
-        return 0;
-    }
-}
-
-// Function to fetch cielo pnl
-const getPnl = async (wallet: string) => {
-    try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pnl?walletAddress=${wallet}`)
-        const data = await response.json()
-        return data.usdPnl || 0 // Add fallback to 0 if no pnl returned
-    } catch (error) {
-        console.error('Error fetching pnl:', error);
-        return 0;
-    }
-}
 
 export async function GET(request: Request) {
     try {
@@ -45,6 +13,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const searchQuery = searchParams.get('wallet')?.toLowerCase();
         const wallets = await getWallets();
+        console.log(wallets)
         // Filter traders if search query exists
         const tradersToProcess = searchQuery
             ? wallets.filter(wallet => wallet.wallet.toLowerCase() === searchQuery)
@@ -63,7 +32,7 @@ export async function GET(request: Request) {
             tradersToProcess.map(async (trader) => {
                 const username = trader.xHandle.replace('@', '')
                 const [followers, pnl] = await Promise.all([
-                    getTwitterFollowers(username),
+                    fetchFollowers(username),
                     getPnl(trader.wallet)
                 ])
                 console.log(username, followers, pnl)
